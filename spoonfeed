@@ -62,7 +62,7 @@ my $mysql_password = "feedthemall";
 ## Google Plus
 # https://github.com/liotier/gplus-bot/blob/master/gplus.php
 # Google Plus user name and password must be updated in gplus.php !
-my $googleplus_program = "$path/gplus.php ";
+my $googleplus_program = "$path/gplus-bot/gplus.php ";
 
 ## Facebook
 # https://github.com/dtompkins/fbcmd
@@ -74,18 +74,18 @@ my $facebook_program = "$path/fbcmd/fbcmd STATUS ";
 # https://github.com/Br3nda/ttytter
 # http://www.floodgap.com/software/ttytter/
 # Could support any StatusNet instance by modifying the "apibase" argument
-my $identica_program = "ttytter -apibase=http://identi.ca/api -authtype=basic -user=liotier:mypassword -silent -status=";
+my $identica_program = "$path/ttytter -apibase=http://identi.ca/api -authtype=basic -user=liotier:mypassword -silent -status=";
 
 ## Twitter
 # https://github.com/Br3nda/ttytter
 # http://www.floodgap.com/software/ttytter/
 # Run 'ttytter' to  
-my $twitter_program = "ttytter -silent -status=";
+my $twitter_program = "$path/ttytter -silent -status=";
 
 ## Friendfeed
 # http://paulbuchheit.blogspot.com/2008/03/friendfeed-from-command-line.html 
 # Friendfeed user name and API key must be updated in ffshare.php !
-my $friendfeed_program = "$path/ffshare.sh -t ";
+my $friendfeed_program = "$path/ffshare/ffshare.sh -t ";
 
 ## Seenthis
 # https://github.com/bortzmeyer/seenthis-python
