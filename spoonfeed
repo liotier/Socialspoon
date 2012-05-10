@@ -1,0 +1,171 @@
+#!/usr/bin/perl
+#
+# Socialspoon - spoonfeed microblogs with scheduled cross-posted statuses
+#
+# Version: 0.1 
+#
+# Author : Jean-Marc Liotier
+#
+# Licensed under the GNU Affero General Public License, version 3
+# http://www.gnu.org/licenses/agpl-3.0.html
+#
+# Known bugs :
+# - Most channels only support ISO-8859-1
+# - The single and double quote characters (' and ") break the command
+#   lines that take the status as argument (fbcmd and ttytter).
+# - Standard output is whatever garbage the posting scripts put there
+#
+# No exception catching or anything even remotely ressembling error
+# handling... Watch your own back !
+#
+# User interface is a Mysql database... Bring your own client.
+#
+## Database schema :
+#
+#CREATE TABLE `Food` (
+#  `Pubdate` datetime NOT NULL,
+#  `Microblog` varchar(140) NOT NULL,
+#  `Macroblog` varchar(2048) NOT NULL,
+#  `Twitter` tinyint(1) NOT NULL DEFAULT '1',
+#  `Identica` tinyint(1) NOT NULL DEFAULT '1',
+#  `Facebook` tinyint(1) NOT NULL DEFAULT '1',
+#  `Googleplus` tinyint(1) NOT NULL DEFAULT '1',
+#  `Friendfeed` tinyint(1) NOT NULL DEFAULT '1',
+#  `Seenthis` tinyint(1) NOT NULL DEFAULT '1',
+#  `Published_Twitter` tinyint(1) NOT NULL DEFAULT '0',
+#  `Published_Identica` tinyint(1) NOT NULL DEFAULT '0',
+#  `Published_Facebook` tinyint(1) NOT NULL DEFAULT '0',
+#  `Published_Googleplus` tinyint(1) NOT NULL DEFAULT '0',
+#  `Published_Friendfeed` tinyint(1) NOT NULL DEFAULT '0',
+#  `Published_Seenthis` tinyint(1) NOT NULL DEFAULT '0',
+#  `ID` int(11) NOT NULL AUTO_INCREMENT,
+#  PRIMARY KEY (`ID`)
+#) ENGINE=InnoDB;
+
+use DBI;
+use DBD::mysql;
+use strict;
+use warnings;
+
+use utf8;
+binmode(STDOUT, ":utf8");
+
+## Mandatory parameters
+my $path = "/home/user/path/to/socialspoon";
+my $mysql_database = "socialspoon";
+my $mysql_user = "socialspoon";
+my $mysql_password = "feedthemall";
+
+## Posting is delegated to external programs
+## See command lines and instructions in the following stanzas
+
+## Google Plus
+# https://github.com/liotier/gplus-bot/blob/master/gplus.php
+# Google Plus user name and password must be updated in gplus.php !
+my $googleplus_program = "$path/gplus.php ";
+
+## Facebook
+# https://github.com/dtompkins/fbcmd
+# http://fbcmd.dtompkins.com/
+# Use 'fbcmd RESET' to initialize fbcmd credentials
+my $facebook_program = "$path/fbcmd/fbcmd STATUS ";
+
+## Identi.ca 
+# https://github.com/Br3nda/ttytter
+# http://www.floodgap.com/software/ttytter/
+# Could support any StatusNet instance by modifying the "apibase" argument
+my $identica_program = "ttytter -apibase=http://identi.ca/api -authtype=basic -user=liotier:mypassword -silent -status=";
+
+## Twitter
+# https://github.com/Br3nda/ttytter
+# http://www.floodgap.com/software/ttytter/
+# Run 'ttytter' to  
+my $twitter_program = "ttytter -silent -status=";
+
+## Friendfeed
+# http://paulbuchheit.blogspot.com/2008/03/friendfeed-from-command-line.html 
+# Friendfeed user name and API key must be updated in ffshare.php !
+my $friendfeed_program = "$path/ffshare.sh -t ";
+
+## Seenthis
+# https://github.com/bortzmeyer/seenthis-python
+# Seenthis credentials must be entered in seenthisauth
+my $seenthis_path = "$path/seenthis-python";
+my $seenthis_program = "$seenthis_path/seenthis.py";
+my $seenthis_temp_file = "$seenthis_path/.seenthistmp";
+
+my $DBImysqlDatabaseString = "DBI:mysql:$mysql_database";
+my $dbh = DBI->connect($DBImysqlDatabaseString, $mysql_user, $mysql_password, {AutoCommit => 1})
+            || die "ERROR: $DBI::errstr";
+
+my $query = $dbh->prepare(' SELECT  ID,
+                                    Microblog,Macroblog,
+                                    Twitter,Identica,Facebook,Googleplus,Friendfeed,
+                                    Published_Twitter,Seenthis,Published_Identica,Published_Facebook,
+                                    Published_Googleplus,Published_Friendfeed,Published_Seenthis 
+                            FROM    Food 
+                            WHERE   pubdate <= NOW()
+                                    AND (  Published_Twitter = 0
+                                        OR Published_Identica = 0
+                                        OR Published_Facebook = 0
+                                        OR Published_Googleplus = 0
+                                        OR Published_Friendfeed = 0
+                                        OR Published_Seenthis = 0)');
+$query->execute();
+
+while(my $row = $query->fetchrow_hashref()) {
+    if ($row->{'Twitter'}) {
+            unless ($row->{'Published_Twitter'}) {
+                system(qq{$twitter_program'$row->{'Microblog'}'});
+                unless ( $? == -1 ) { $row->{'Published_Twitter'} = 1 }
+            }
+    };
+    if ($row->{'Identica'}) {
+            unless ($row->{'Published_Identica'}) {
+                system(qq{$identica_program'$row->{'Microblog'}'});
+                unless ( $? == -1 ) { $row->{'Published_Identica'} = 1 }
+            }
+    }
+    if ($row->{'Googleplus'}) {
+            unless ($row->{'Published_Googleplus'}) {
+                system(qq{$googleplus_program"$row->{'Macroblog'}"});
+                unless ( $? == -1 ) {$row->{'Published_Googleplus'} = 1 }
+            }          
+    }
+    if ($row->{'Facebook'}) {
+            unless ($row->{'Published_Facebook'}) {
+                system(qq{$facebook_program'$row->{'Macroblog'}'});
+                unless ( $? == -1 ) { $row->{'Published_Facebook'} = 1 }
+            }
+    };
+    if ($row->{'Friendfeed'}) {
+            unless ($row->{'Published_Friendfeed'}) {
+                system(qq{$friendfeed_program"$row->{'Macroblog'}"});
+                unless ( $? == -1 ) { $row->{'Published_Friendfeed'} = 1 }
+            }
+    }
+    if ($row->{'Seenthis'}) {
+            unless ($row->{'Published_Seenthis'}) {
+                chdir ($seenthis_path);
+                open (SeenthisTempFile, ">$seenthis_temp_file");
+                print SeenthisTempFile $row->{'Macroblog'};
+                system(qq{$seenthis_program < .seenthistmp});
+                unless ( $? == -1 ) { $row->{'Published_Seenthis'} = 1 }
+                close (SeenthisTempFile);
+                unlink ($seenthis_temp_file);
+                chdir ($path);
+            }
+    }
+    my $update = $dbh->prepare("UPDATE Food SET
+                                Published_Googleplus = $row->{'Published_Googleplus'},
+                                Published_Facebook = $row->{'Published_Facebook'},
+                                Published_Twitter = $row->{'Published_Twitter'},
+                                Published_Identica = $row->{'Published_Identica'},
+                                Published_Friendfeed = $row->{'Published_Friendfeed'},
+                                Published_Seenthis = $row->{'Published_Seenthis'}
+                                WHERE ID = $row->{'ID'}");
+    $update->execute();
+    $update->finish();
+}
+
+$dbh->disconnect();

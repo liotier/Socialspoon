@@ -1,0 +1,12 @@
+[submodule "gplus-bot"]
+	path = gplus-bot
+	url = git://github.com/liotier/gplus-bot
+[submodule "ttytter"]
+	path = ttytter
+	url = git://github.com/Br3nda/ttytter
+[submodule "fbcmd"]
+	path = fbcmd
+	url = git://github.com/dtompkins/fbcmd
+[submodule "seenthis-python"]
+	path = seenthis-python
+	url = git://github.com/bortzmeyer/seenthis-python
