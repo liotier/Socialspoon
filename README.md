@@ -1,4 +1,5 @@
-Socialspoon
-===========
+=======================================================================
+Socialspoon - spoonfeed microblogs with scheduled cross-posted statuses
+=======================================================================
 
-Spoonfeed you social network with scheduled cross-posting.
+'spoonfeed' is the main script - read it to get an overview of how Socialspoon works.
