@@ -79,7 +79,7 @@ my $identica_program = "$path/ttytter -apibase=http://identi.ca/api -authtype=ba
 ## Twitter
 # https://github.com/Br3nda/ttytter
 # http://www.floodgap.com/software/ttytter/
-# Run 'ttytter' to  
+# Run 'ttytter' to  initialize twitter credentials
 my $twitter_program = "$path/ttytter -silent -status=";
 
 ## Friendfeed
